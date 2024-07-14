@@ -1,0 +1,40 @@
+name: Generate PDF from Markdown
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.md'
+
+jobs:
+  convert_to_pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: '2.19.2'
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-base texlive-fonts-recommended texlive-extra-utils texlive-latex-extra texlive-xetex
+
+      - name: Convert Markdown to PDF
+        run: |
+          for file in *.md
+          do
+            [ -f "$file" ] || continue
+            output_file="${file%.md}.pdf"
+            pandoc "$file" -o "$output_file" --pdf-engine=xelatex
+          done
+
+      - name: Upload PDF artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-pdfs
+          path: ./*.pdf
